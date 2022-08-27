@@ -2,10 +2,9 @@ package latibro.minecraft.swap;
 
 import latibro.minecraft.swap.swapper.SwapperBlock;
 import latibro.minecraft.swap.swapper.SwapperBlockEntity;
+import latibro.minecraft.swap.swapper.SwapperBlockItem;
 import net.minecraft.block.Block;
-import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.fml.common.Mod;
@@ -29,7 +28,7 @@ public class SwapMod {
     public static final RegistryObject<TileEntityType<SwapperBlockEntity>> SWAPPER_BLOCK_ENTITY = BLOCK_ENTITIES.register(
             "swapper", () -> TileEntityType.Builder.of(SwapperBlockEntity::new, SWAPPER_BLOCK.get()).build(null)
     );
-    public static final RegistryObject<Item> SWAPPER_ITEM = ITEMS.register(SWAPPER_BLOCK.getId().getPath(), () -> new BlockItem(SWAPPER_BLOCK.get(), new Item.Properties().tab(ItemGroup.TAB_MISC)));
+    public static final RegistryObject<Item> SWAPPER_ITEM = ITEMS.register(SWAPPER_BLOCK.getId().getPath(), SwapperBlockItem::new);
 
     public SwapMod() {
         BLOCKS.register(FMLJavaModLoadingContext.get().getModEventBus());
