@@ -13,6 +13,7 @@ import static latibro.minecraft.swap.SwapMod.SWAPPER_BLOCK_ENTITY;
 
 public class SwapperBlockEntity extends TileEntity {
 
+    private BlockPos targetPos;
     private BlockData storedTargetData;
 
     public SwapperBlockEntity() {
@@ -20,25 +21,31 @@ public class SwapperBlockEntity extends TileEntity {
     }
 
     public void swap() {
-        SwapMod.LOGGER.warn("EEE swapping");
+        SwapMod.LOGGER.warn("SWAPPER swapping");
 
         BlockData currentTargetData = getWorldTargetData();
 
         // Set new to stored
-        BlockData newBlockData = getStoredTargetData();
+        BlockData newTargetData = getStoredTargetData();
 
         // Set stored to current
         setStoredTargetData(currentTargetData);
 
         // Swap current for new
-        setWorldTargetData(newBlockData);
+        setWorldTargetData(newTargetData);
     }
 
     private BlockPos getTargetPos() {
-        return getBlockPos().above();
+        if (targetPos == null) {
+            targetPos = getBlockPos().above();
+        }
+        return targetPos;
     }
 
     private BlockData getStoredTargetData() {
+        if (storedTargetData == null) {
+            storedTargetData = new BlockData(Blocks.AIR.defaultBlockState(), null);
+        }
         return storedTargetData;
     }
 
@@ -51,15 +58,15 @@ public class SwapperBlockEntity extends TileEntity {
             return null;
         }
 
-        BlockState blockState = getLevel().getBlockState(getTargetPos());
-        TileEntity blockEntity = getLevel().getBlockEntity(getTargetPos());
-        CompoundNBT nbt = null;
+        BlockState targetBlockState = getLevel().getBlockState(getTargetPos());
+        TileEntity targetBlockEntity = getLevel().getBlockEntity(getTargetPos());
+        CompoundNBT targetNbt = null;
 
-        if (blockEntity != null) {
-            nbt = blockEntity.serializeNBT();
+        if (targetBlockEntity != null) {
+            targetNbt = targetBlockEntity.serializeNBT();
         }
 
-        return new BlockData(blockState, nbt);
+        return new BlockData(targetBlockState, targetNbt);
     }
 
     private void setWorldTargetData(BlockData targetData) {
@@ -67,49 +74,53 @@ public class SwapperBlockEntity extends TileEntity {
             return;
         }
 
-        BlockState blockState = targetData != null ? targetData.blockState : null;
-        if (blockState == null) {
-            blockState = Blocks.AIR.defaultBlockState();
+        BlockState targetBlockState = targetData != null ? targetData.blockState : null;
+        if (targetBlockState == null) {
+            targetBlockState = Blocks.AIR.defaultBlockState();
         }
 
         // Clear inventory to prevent item drops when removed
-        TileEntity currentBlockEntity = getLevel().getBlockEntity(getTargetPos());
-        if (currentBlockEntity instanceof IInventory) {
-            ((IInventory) currentBlockEntity).clearContent();
+        TileEntity currentTargetBlockEntity = getLevel().getBlockEntity(getTargetPos());
+        if (currentTargetBlockEntity instanceof IInventory) {
+            ((IInventory) currentTargetBlockEntity).clearContent();
         }
 
-        getLevel().setBlockAndUpdate(getTargetPos(), blockState);
+        getLevel().setBlockAndUpdate(getTargetPos(), targetBlockState);
 
-        TileEntity blockEntity = getLevel().getBlockEntity(getTargetPos());
-        if (targetData != null && targetData.nbt != null && blockEntity != null) {
-            blockEntity.deserializeNBT(targetData.nbt);
+        TileEntity targetBlockEntity = getLevel().getBlockEntity(getTargetPos());
+        if (targetData != null && targetData.nbt != null && targetBlockEntity != null) {
+            targetBlockEntity.deserializeNBT(targetData.nbt);
         }
 
         // notify neighbors of target
-        getLevel().updateNeighborsAt(getTargetPos(), blockState.getBlock());
+        getLevel().updateNeighborsAt(getTargetPos(), targetBlockState.getBlock());
     }
 
 
     @Override
     public void load(BlockState blockState, CompoundNBT nbt) {
-        SwapMod.LOGGER.warn("EEE load");
         super.load(blockState, nbt);
+
+        targetPos = NBTUtil.readBlockPos(nbt.getCompound("SwapperTargetPos"));
+
         CompoundNBT targetDataNbt = nbt.getCompound("SwapperTargetData");
         BlockState targetBlockState = NBTUtil.readBlockState(targetDataNbt.getCompound("BlockState"));
         CompoundNBT targetNbt = targetDataNbt.getCompound("NBT");
-        storedTargetData = new BlockData(targetBlockState, targetNbt);
-        SwapMod.LOGGER.warn("EEE load done");
+        setStoredTargetData(new BlockData(targetBlockState, targetNbt));
     }
 
     @Override
     public CompoundNBT save(CompoundNBT nbt) {
-        SwapMod.LOGGER.warn("EEE save");
         super.save(nbt);
+
+        nbt.put("SwapperTargetPos", NBTUtil.writeBlockPos(getTargetPos()));
+
         CompoundNBT targetDataNbt = new CompoundNBT();
-        targetDataNbt.put("BlockState", NBTUtil.writeBlockState(storedTargetData.blockState));
-        targetDataNbt.put("NBT", storedTargetData.nbt);
+        targetDataNbt.put("BlockState", NBTUtil.writeBlockState(getStoredTargetData().blockState));
+        if (getStoredTargetData().nbt != null) {
+            targetDataNbt.put("NBT", getStoredTargetData().nbt);
+        }
         nbt.put("SwapperTargetData", targetDataNbt);
-        SwapMod.LOGGER.warn("EEE save done");
         return nbt;
     }
 
