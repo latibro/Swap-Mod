@@ -1,6 +1,7 @@
 package latibro.minecraft.swap.swapper;
 
 import latibro.minecraft.swap.SwapMod;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.inventory.IInventory;
@@ -9,9 +10,18 @@ import net.minecraft.nbt.NBTUtil;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.Arrays;
+
 import static latibro.minecraft.swap.SwapMod.SWAPPER_BLOCK_ENTITY;
 
 public class SwapperBlockEntity extends TileEntity {
+
+    private static final Block[] BLACKLISTED_BLOCKS = {
+            Blocks.BEDROCK,
+            Blocks.COMMAND_BLOCK,
+            Blocks.CHAIN_COMMAND_BLOCK,
+            Blocks.REPEATING_COMMAND_BLOCK
+    };
 
     private BlockPos targetPos;
     private BlockData storedTargetData;
@@ -24,6 +34,12 @@ public class SwapperBlockEntity extends TileEntity {
         SwapMod.LOGGER.warn("SWAPPER swapping");
 
         BlockData currentTargetData = getWorldTargetData();
+
+        // Check if target is blacklisted
+        if (Arrays.stream(BLACKLISTED_BLOCKS).anyMatch(currentTargetData.blockState.getBlock()::equals)) {
+            SwapMod.LOGGER.warn("SWAPPER target is blacklisted");
+            return;
+        }
 
         // Set new to stored
         BlockData newTargetData = getStoredTargetData();
