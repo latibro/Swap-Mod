@@ -33,6 +33,12 @@ public class SwapperBlockEntity extends TileEntity {
     public void swap() {
         SwapMod.LOGGER.warn("SWAPPER swapping");
 
+        // Check if target position is the same as swapper position
+        if (getBlockPos().equals(getTargetPos())) {
+            SwapMod.LOGGER.warn("SWAPPER target and swapper is at same position");
+            return;
+        }
+
         BlockData currentTargetData = getWorldTargetData();
 
         // Check if target is blacklisted
