@@ -6,8 +6,13 @@ import net.minecraft.block.Blocks;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.NBTUtil;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SUpdateTileEntityPacket;
+import net.minecraft.particles.ParticleTypes;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+
+import javax.annotation.Nullable;
 
 import static latibro.minecraft.swap.SwapMod.SWAPPER_BLOCK_ENTITY;
 
@@ -21,7 +26,7 @@ public class SwapperBlockEntity extends TileEntity {
     }
 
     public void swap() {
-        SwapMod.LOGGER.warn("SWAPPER swapping");
+        SwapMod.LOGGER.warn("SWAPPER swapping " + getTargetPos());
 
         BlockData currentTargetData = getWorldTargetData();
 
@@ -124,6 +129,13 @@ public class SwapperBlockEntity extends TileEntity {
         return nbt;
     }
 
+    public void highlightTarget() {
+        SwapMod.LOGGER.warn("Particles " + getTargetPos());
+        if (getLevel().isClientSide) {
+            getLevel().addParticle(ParticleTypes.POOF, getTargetPos().getX() + 0.5, getTargetPos().getY() + 0.5, getTargetPos().getZ() + 0.5, 0.0, 0.0, 0);
+        }
+    }
+
     private static class BlockData {
         final BlockState blockState;
         final CompoundNBT nbt;
@@ -135,4 +147,26 @@ public class SwapperBlockEntity extends TileEntity {
         }
     }
 
+    @Override
+    public CompoundNBT getUpdateTag() {
+        //TODO maybe only target position
+        return save(new CompoundNBT());
+    }
+
+    @Override
+    public void handleUpdateTag(BlockState state, CompoundNBT tag) {
+        //TODO maybe only target position
+        load(state, tag);
+    }
+
+    @Nullable
+    @Override
+    public SUpdateTileEntityPacket getUpdatePacket() {
+        return new SUpdateTileEntityPacket(getBlockPos(), 0, getUpdateTag());
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket packet) {
+        handleUpdateTag(getBlockState(), packet.getTag());
+    }
 }
