@@ -47,6 +47,12 @@ public class SwapperBlockEntity extends TileEntity {
             return;
         }
 
+        // Check if target position is loaded (chunk is loaded)
+        if (!getLevel().isLoaded(getTargetPos())) {
+            SwapMod.LOGGER.warn("SWAPPER target is not loaded");
+            return;
+        }
+
         // Set new to stored
         BlockData newTargetData = getStoredTargetData();
 
