@@ -18,8 +18,8 @@ public class SwapperBlock extends Block {
     public static final BooleanProperty TRIGGERED = BlockStateProperties.TRIGGERED;
 
     public SwapperBlock() {
-        super(Properties.of(Material.METAL));
-        this.registerDefaultState(this.defaultBlockState().setValue(TRIGGERED, false));
+        super(Properties.of(Material.STONE).requiresCorrectToolForDrops().strength(3.5F));
+        registerDefaultState(defaultBlockState().setValue(TRIGGERED, false));
     }
 
     @Override
