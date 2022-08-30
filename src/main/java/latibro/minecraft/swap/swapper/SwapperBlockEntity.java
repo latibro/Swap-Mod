@@ -81,6 +81,10 @@ public class SwapperBlockEntity extends TileEntity {
         storedTargetData = targetData;
     }
 
+    public boolean hasStoredTargetData() {
+        return storedTargetData != null && !storedTargetData.blockState.is(Blocks.AIR);
+    }
+
     private BlockData getWorldTargetData() {
         if (getLevel() == null) {
             return null;
