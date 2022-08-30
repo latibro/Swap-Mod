@@ -16,7 +16,7 @@ import static latibro.minecraft.swap.SwapMod.SWAPPER_BLOCK_ENTITY;
 
 public class SwapperBlockEntity extends TileEntity {
 
-    private static final Block[] BLACKLISTED_BLOCKS = {
+    public static final Block[] BLACKLISTED_BLOCKS = {
             Blocks.BEDROCK,
             Blocks.COMMAND_BLOCK,
             Blocks.CHAIN_COMMAND_BLOCK,
