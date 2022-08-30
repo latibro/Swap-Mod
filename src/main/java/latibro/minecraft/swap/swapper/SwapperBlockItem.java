@@ -6,6 +6,7 @@ import net.minecraft.item.*;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
@@ -28,6 +29,19 @@ public class SwapperBlockItem extends BlockItem {
 
             return ActionResultType.PASS;
         } else {
+            CompoundNBT blockEntityTag = context.getItemInHand().getOrCreateTagElement("BlockEntityTag");
+            CompoundNBT targetPosTag = blockEntityTag.getCompound("SwapperTargetPos");
+            SwapMod.LOGGER.warn("SWAPPER pos " + targetPosTag + " " + context.getClickedPos().relative(context.getClickedFace(), 1));
+            if (targetPosTag != null) {
+                BlockPos targetPos = NBTUtil.readBlockPos(targetPosTag);
+                BlockPos clickedPos = context.getClickedPos().relative(context.getClickedFace(), 1);
+                if (targetPos.equals(clickedPos)) {
+                    SwapMod.LOGGER.warn("SWAPPER target and swapper is at same position");
+                    context.getPlayer().sendMessage(new StringTextComponent("Unable to place at target"), Util.NIL_UUID);
+                    return ActionResultType.FAIL;
+                }
+            }
+
             return super.useOn(context);
         }
     }
