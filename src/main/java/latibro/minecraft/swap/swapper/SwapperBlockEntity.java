@@ -7,16 +7,19 @@ import net.minecraft.block.Blocks;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.NBTUtil;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 import static latibro.minecraft.swap.SwapMod.SWAPPER_BLOCK_ENTITY;
 
 public class SwapperBlockEntity extends TileEntity {
 
-    private static final Block[] BLACKLISTED_BLOCKS = {
+    public static final Block[] BLACKLISTED_BLOCKS = {
             Blocks.BEDROCK,
             Blocks.COMMAND_BLOCK,
             Blocks.CHAIN_COMMAND_BLOCK,
@@ -79,6 +82,10 @@ public class SwapperBlockEntity extends TileEntity {
 
     private void setStoredTargetData(BlockData targetData) {
         storedTargetData = targetData;
+    }
+
+    public boolean hasStoredTargetData() {
+        return storedTargetData != null && !storedTargetData.blockState.is(Blocks.AIR);
     }
 
     private BlockData getWorldTargetData() {
@@ -150,6 +157,29 @@ public class SwapperBlockEntity extends TileEntity {
         }
         nbt.put("SwapperTargetData", targetDataNbt);
         return nbt;
+    }
+
+    @Override
+    public CompoundNBT getUpdateTag() {
+        //TODO maybe only target position
+        return save(new CompoundNBT());
+    }
+
+    @Override
+    public void handleUpdateTag(BlockState state, CompoundNBT tag) {
+        //TODO maybe only target position
+        load(state, tag);
+    }
+
+    @Nullable
+    @Override
+    public SUpdateTileEntityPacket getUpdatePacket() {
+        return new SUpdateTileEntityPacket(getBlockPos(), 0, getUpdateTag());
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket packet) {
+        handleUpdateTag(getBlockState(), packet.getTag());
     }
 
     private static class BlockData {
