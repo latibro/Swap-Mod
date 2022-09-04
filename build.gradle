@@ -26,6 +26,12 @@ repositories {
     maven { // TOP
         url "https://maven.tterrag.com"
     }
+    maven {
+        url = 'https://www.cursemaven.com'
+        content {
+            includeGroup "curse.maven"
+        }
+    }
 }
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
@@ -134,6 +140,8 @@ dependencies {
 
     compileOnly fg.deobf("mcjty.theoneprobe:TheOneProbe-1.16:1.16-3.1.4-22:api")
     implementation fg.deobf("mcjty.theoneprobe:TheOneProbe-1.16:1.16-3.1.4-22")
+
+    implementation fg.deobf("curse.maven:chisels-bits-231095:3593643")
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..
