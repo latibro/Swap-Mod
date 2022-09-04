@@ -64,6 +64,9 @@ public class SwapperBlockEntity extends TileEntity {
 
         // Swap current for new
         setWorldTargetData(newTargetData);
+
+        // Notify clients about the change
+        getLevel().markAndNotifyBlock(getTargetPos(), getLevel().getChunkAt(getTargetPos()), newTargetData.blockState, storedTargetData.blockState, 3, 512);
     }
 
     private BlockPos getTargetPos() {
@@ -126,6 +129,9 @@ public class SwapperBlockEntity extends TileEntity {
         if (targetData != null && targetData.nbt != null && targetBlockEntity != null) {
             targetBlockEntity.deserializeNBT(targetData.nbt);
         }
+
+        // notify target
+        getLevel().neighborChanged(getTargetPos(), targetBlockState.getBlock(), getTargetPos());
 
         // notify neighbors of target
         getLevel().updateNeighborsAt(getTargetPos(), targetBlockState.getBlock());
