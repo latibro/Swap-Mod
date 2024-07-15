@@ -1,4 +1,4 @@
-package com.example.examplemod.platform.services;
+package com.latibro.minecraft.swap.platform.services;
 
 public interface IPlatformHelper {
 

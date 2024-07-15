@@ -1,8 +1,7 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "com.example.examplemod.mixin",
-  "refmap": "${mod_id}.refmap.json",
+  "package": "com.latibro.minecraft.swap.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [],
   "client": [
@@ -13,4 +12,3 @@
     "defaultRequire": 1
   }
 }
-  

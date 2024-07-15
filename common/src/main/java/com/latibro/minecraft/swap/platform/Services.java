@@ -1,7 +1,7 @@
-package com.example.examplemod.platform;
+package com.latibro.minecraft.swap.platform;
 
-import com.example.examplemod.Constants;
-import com.example.examplemod.platform.services.IPlatformHelper;
+import com.latibro.minecraft.swap.Constants;
+import com.latibro.minecraft.swap.platform.services.IPlatformHelper;
 
 import java.util.ServiceLoader;
 
