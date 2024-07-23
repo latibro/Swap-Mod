@@ -21,7 +21,8 @@ public class SwapperBlock extends Block implements EntityBlock {
 
     public static final BooleanProperty TRIGGERED = BlockStateProperties.TRIGGERED;
 
-    private static final Properties DEFAULT_PROPERTIES = BlockBehaviour.Properties.ofFullCopy(Blocks.STONE).requiresCorrectToolForDrops().strength(3.5F);
+    private static final Properties DEFAULT_PROPERTIES =
+            BlockBehaviour.Properties.ofFullCopy(Blocks.STONE).requiresCorrectToolForDrops().strength(3.5F);
 
     public SwapperBlock() {
         super(DEFAULT_PROPERTIES);
@@ -35,14 +36,19 @@ public class SwapperBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
-        Constants.LOG.debug("neighborChanged : {}", pos);
+    protected void neighborChanged(BlockState state,
+                                   Level level,
+                                   BlockPos pos,
+                                   Block neighborBlock,
+                                   BlockPos neighborPos,
+                                   boolean movedByPiston) {
+        Constants.LOG.info("neighborChanged : {}", pos);
 
         if (!level.isClientSide) {
             boolean previousPowered = state.getValue(TRIGGERED);
             boolean currentPowered = level.getDirectSignalTo(pos) > 0;
 
-            if (previousPowered==currentPowered) {
+            if (previousPowered == currentPowered) {
                 // No powered change
                 return;
             }
@@ -63,7 +69,12 @@ public class SwapperBlock extends Block implements EntityBlock {
     }
 
     @Override
-    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
+    public void playerDestroy(Level level,
+                              Player player,
+                              BlockPos pos,
+                              BlockState state,
+                              @Nullable BlockEntity blockEntity,
+                              ItemStack tool) {
         if (((SwapperBlockEntity) blockEntity).hasStoredTargetData()) {
             Constants.LOG.warn("SWAPPER remove - holds stored data");
             player.displayClientMessage(Component.literal("Swapper has stored block"), false);

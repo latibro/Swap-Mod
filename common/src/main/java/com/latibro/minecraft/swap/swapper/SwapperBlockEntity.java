@@ -1,10 +1,14 @@
 package com.latibro.minecraft.swap.swapper;
 
 import com.latibro.minecraft.swap.Constants;
+import com.latibro.minecraft.swap.platform.Services;
+import com.latibro.minecraft.swap.platform.services.RegistryService;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
@@ -18,84 +22,96 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Arrays;
 
-import static com.latibro.minecraft.swap.CommonClass.SWAPPER_BLOCK_ENTITY_TYPE;
-
 public class SwapperBlockEntity extends BlockEntity {
 
     public static final Block[] BLACKLISTED_BLOCKS = {
             Blocks.BEDROCK, Blocks.COMMAND_BLOCK, Blocks.CHAIN_COMMAND_BLOCK, Blocks.REPEATING_COMMAND_BLOCK
     };
 
-    private BlockPos targetPos;
-    private StoredBlockData storedTargetData;
+    private BlockPos targetBlockPos;
 
-    public SwapperBlockEntity(BlockPos pos, BlockState state) {
-        super(SWAPPER_BLOCK_ENTITY_TYPE, pos, state);
+    private StoredBlockData storedBlockData;
+
+    public SwapperBlockEntity(BlockPos blockPos, BlockState blockState) {
+        super(Services.get(RegistryService.class).getBlockEntityType("swapper"), blockPos, blockState);
     }
 
     public void swap() {
-        Constants.LOG.warn("SWAPPER swapping");
+        Constants.LOG.info("SWAPPER swapping");
 
         // Check if target position is the same as swapper position
-        if (getBlockPos().equals(getTargetPos())) {
+        if (getBlockPos().equals(getTargetBlockPos())) {
             Constants.LOG.warn("SWAPPER target and swapper is at same position");
             return;
         }
 
-        StoredBlockData blockToBeStored = getPlacedBlock();
+        StoredBlockData blockDataToBeStored = getBlockDataOfBlockCurrentlyPlacedAtTargetBlockPos();
+        Constants.LOG.info("SWAPPER block to be stored {}", blockDataToBeStored);
 
         // Check if target is blacklisted
-        if (Arrays.stream(BLACKLISTED_BLOCKS).anyMatch(blockToBeStored.blockState.getBlock()::equals)) {
-            Constants.LOG.warn("SWAPPER target is blacklisted");
+        var isBlockBlacklisted
+                = Arrays.stream(BLACKLISTED_BLOCKS).anyMatch(blockDataToBeStored.blockState.getBlock()::equals);
+        if (isBlockBlacklisted) {
+            Constants.LOG.info("SWAPPER target is blacklisted");
             return;
         }
 
         // Check if target position is loaded (chunk is loaded)
-        if (!getLevel().isLoaded(getTargetPos())) {
-            Constants.LOG.warn("SWAPPER target is not loaded");
+        var isTargetBlockPosLoaded = getLevel().isLoaded(getTargetBlockPos());
+        if (!isTargetBlockPosLoaded) {
+            Constants.LOG.info("SWAPPER target is not loaded");
             return;
         }
 
         // Set new to stored
-        StoredBlockData blockToBePlaced = getStoredBlock();
+        StoredBlockData blockDataToBePlaced = getStoredBlockData();
+        Constants.LOG.info("SWAPPER block to be placed {}", blockDataToBePlaced);
 
         // Set stored to current
-        storeBlock(blockToBeStored);
+        storeBlockData(blockDataToBeStored);
 
         // Swap current for new
-        placeBlock(blockToBePlaced);
+        placeBlock(blockDataToBePlaced);
 
         // Notify clients about the change
         // Same flags Level.setBlock() - 1+2=3. 1 will notify neighboring blocks through neighborChanged updates. 2 will send the change to clients.
-        getLevel().sendBlockUpdated(getTargetPos(), blockToBePlaced.blockState, storedTargetData.blockState, 3);
+        getLevel().sendBlockUpdated(getTargetBlockPos(), blockDataToBePlaced.blockState, storedBlockData.blockState, 3);
     }
 
-    private BlockPos getTargetPos() {
-        if (targetPos == null) {
-            targetPos = getBlockPos().above();
+    private BlockPos getTargetBlockPos() {
+        if (this.targetBlockPos == null) {
+            this.targetBlockPos = getBlockPos().above();
         }
-        return targetPos;
+        return this.targetBlockPos;
     }
 
-    private StoredBlockData getStoredBlock() {
-        if (storedTargetData == null) {
-            Constants.LOG.warn("SWAPPER stored target data is null");
-            storedTargetData = new StoredBlockData(Blocks.BLUE_WOOL.defaultBlockState(), null);
+    private void setTargetBlockPos(BlockPos blockPos) {
+        if (blockPos == null) {
+            this.targetBlockPos = getBlockPos().above();
+        } else {
+            this.targetBlockPos = blockPos;
         }
-        return storedTargetData;
     }
 
-    private void storeBlock(StoredBlockData targetData) {
-        storedTargetData = targetData;
+    private StoredBlockData getStoredBlockData() {
+        if (storedBlockData == null) {
+            Constants.LOG.info("SWAPPER stored target data is null");
+            storedBlockData = new StoredBlockData(Blocks.AIR.defaultBlockState(), null);
+        }
+        return storedBlockData;
+    }
+
+    private void storeBlockData(StoredBlockData targetData) {
+        storedBlockData = targetData;
     }
 
     public boolean hasStoredTargetData() {
-        return storedTargetData != null && !storedTargetData.blockState.is(Blocks.AIR);
+        return storedBlockData != null && !storedBlockData.blockState.is(Blocks.AIR);
     }
 
-    private StoredBlockData getPlacedBlock() {
-        BlockState targetBlockState = getLevel().getBlockState(getTargetPos());
-        BlockEntity targetBlockEntity = getLevel().getBlockEntity(getTargetPos());
+    private StoredBlockData getBlockDataOfBlockCurrentlyPlacedAtTargetBlockPos() {
+        BlockState targetBlockState = getLevel().getBlockState(getTargetBlockPos());
+        BlockEntity targetBlockEntity = getLevel().getBlockEntity(getTargetBlockPos());
 
         if (targetBlockEntity == null) {
             return new StoredBlockData(targetBlockState, null);
@@ -108,86 +124,112 @@ public class SwapperBlockEntity extends BlockEntity {
     }
 
     private void placeBlock(StoredBlockData blockData) {
-        BlockState blockState = blockData == null
-                                ? Blocks.GREEN_WOOL.defaultBlockState()
-                                : blockData.blockState;
+        BlockState blockState = blockData.blockState;
+
+        if (blockState == null) {
+            Constants.LOG.info("SWAPPER no block state - defaulting");
+            blockState = Blocks.AIR.defaultBlockState();
+        }
 
         // Clear inventory to prevent item drops when removed (replaced)
-        BlockEntity currentlyPlacedBlockEntity = getLevel().getBlockEntity(getTargetPos());
+        BlockEntity currentlyPlacedBlockEntity = getLevel().getBlockEntity(getTargetBlockPos());
         if (currentlyPlacedBlockEntity instanceof Container container) {
-            Constants.LOG.debug("SWAPPER clearing container of current block before replace");
+            Constants.LOG.info("SWAPPER clearing container of current block before replace");
             container.clearContent();
         }
 
         // Place new block (replace the old block)
-        Constants.LOG.debug("SWAPPER placing stored block");
-        getLevel().setBlockAndUpdate(getTargetPos(), blockState);
+        Constants.LOG.info("SWAPPER placing stored block");
+        getLevel().setBlockAndUpdate(getTargetBlockPos(), blockState);
 
         // If any tag was stored, then we
         if (blockData.blockEntityTag != null) {
-            Constants.LOG.debug("SWAPPER has stored tag");
+            Constants.LOG.info("SWAPPER has stored tag {}", blockData.blockEntityTag);
 
-            BlockEntity blockEntity = getLevel().getBlockEntity(getTargetPos());
+            BlockEntity blockEntity = getLevel().getBlockEntity(getTargetBlockPos());
 
             if (blockEntity == null) {
-                Constants.LOG.debug("SWAPPER has stored tag but did not find block entity");
+                Constants.LOG.info("SWAPPER has stored tag but did not find block entity");
             } else {
-                Constants.LOG.debug("SWAPPER updating tag on block entity");
+                Constants.LOG.info("SWAPPER updating tag on block entity");
 
                 var customData = blockEntity.components().getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
                 var customDataTag = customData.copyTag();
 
                 DataComponentPatch dataComponentPatch
-                        = DataComponentPatch.builder().set(DataComponents.CUSTOM_DATA, CustomData.of(customDataTag)).build();
+                        = DataComponentPatch.builder()
+                                            .set(DataComponents.CUSTOM_DATA, CustomData.of(customDataTag))
+                                            .build();
 
                 blockEntity.applyComponents(blockEntity.components(), dataComponentPatch);
             }
         }
 
         // notify target self - to make the newly placed block react to neighbor states
-        getLevel().neighborChanged(getTargetPos(), blockState.getBlock(), getTargetPos());
+        getLevel().neighborChanged(getTargetBlockPos(), blockState.getBlock(), getTargetBlockPos());
 
         // notify neighbors of target - to make neighbors react to newly placed block
-        getLevel().updateNeighborsAt(getTargetPos(), blockState.getBlock());
+        getLevel().updateNeighborsAt(getTargetBlockPos(), blockState.getBlock());
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        Constants.LOG.info("SWAPPER loading data {}", tag);
+
         super.loadAdditional(tag, registries);
 
-        this.targetPos = NbtUtils.readBlockPos(tag, "SwapperTargetPos").get();
+        var storedTargetBlockPos = NbtUtils.readBlockPos(tag, "SwapperTargetPos").get();
+        setTargetBlockPos(storedTargetBlockPos);
 
-        CompoundTag targetDataNbt = tag.getCompound("SwapperTargetData");
-        CompoundTag targetBlockStateNbt = targetDataNbt.getCompound("BlockState");
-        BlockState targetBlockState
-                = NbtUtils.readBlockState(this.getLevel().holderLookup(Registries.BLOCK), targetBlockStateNbt);
-        CompoundTag targetNbt = targetDataNbt.getCompound("Tag");
-        storeBlock(new StoredBlockData(targetBlockState, targetNbt));
+        var storedBlockDataTag = tag.getCompound("SwapperTargetData");
+
+        var storedBlockStateTag = storedBlockDataTag.getCompound("BlockState");
+        HolderGetter<Block> holderGetter = (HolderGetter<Block>) (this.level != null
+                                                                  ? this.level.holderLookup(Registries.BLOCK)
+                                                                  : BuiltInRegistries.BLOCK.asLookup());
+        var storedBlockState
+                = NbtUtils.readBlockState(holderGetter, storedBlockStateTag);
+
+        var storedBlockEntityTag = storedBlockDataTag.getCompound("Tag");
+
+        storeBlockData(new StoredBlockData(storedBlockState, storedBlockEntityTag));
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
 
-        tag.put("SwapperTargetPos", NbtUtils.writeBlockPos(getTargetPos()));
+        var targetBlockPos = getTargetBlockPos();
+        var targetBlockPosTag = NbtUtils.writeBlockPos(targetBlockPos);
+        tag.put("SwapperTargetPos", targetBlockPosTag);
 
-        CompoundTag targetDataNbt = new CompoundTag();
-        var targetBlockStateNbt = NbtUtils.writeBlockState(getStoredBlock().blockState);
-        targetDataNbt.put("BlockState", targetBlockStateNbt);
-        if (getStoredBlock().blockEntityTag != null) {
-            targetDataNbt.put("Tag", getStoredBlock().blockEntityTag);
+        var storedBlockData = getStoredBlockData();
+        CompoundTag storedBlockDataTag = new CompoundTag();
+
+        var storedBlockState = storedBlockData.blockState;
+        var storedBlockStateTag = NbtUtils.writeBlockState(storedBlockState);
+        storedBlockDataTag.put("BlockState", storedBlockStateTag);
+
+        var storedBlockEntityTag = storedBlockData.blockEntityTag;
+        if (storedBlockEntityTag != null) {
+            storedBlockDataTag.put("Tag", storedBlockEntityTag);
         }
-        tag.put("SwapperTargetData", targetDataNbt);
-    }
+        tag.put("SwapperTargetData", storedBlockDataTag);
 
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return this.saveCustomOnly(registries);
+        Constants.LOG.info("SWAPPER saved data {}", tag);
     }
 
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        Constants.LOG.info("SWAPPER getUpdatePacket");
         return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        Constants.LOG.info("SWAPPER getUpdateTag");
+        //TODO do client need to know any details?
+        return this.saveCustomOnly(registries);
     }
 
     private static class StoredBlockData {

@@ -1,6 +1,8 @@
 package com.latibro.minecraft.swap.swapper;
 
 import com.latibro.minecraft.swap.Constants;
+import com.latibro.minecraft.swap.platform.Services;
+import com.latibro.minecraft.swap.platform.services.RegistryService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.NbtUtils;
@@ -13,10 +15,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 
-import java.util.Arrays;
 import java.util.List;
-
-import static com.latibro.minecraft.swap.swapper.SwapperBlockEntity.BLACKLISTED_BLOCKS;
 
 public class SwapperBlockItem extends BlockItem {
 
@@ -27,54 +26,62 @@ public class SwapperBlockItem extends BlockItem {
     //TODO inspiration https://fabricmc.net/2024/04/19/1205.html#:~:text=called%20%E2%80%9Creloadable%20registries%E2%80%9D.-,Item%20Components,-We%20skip%20the
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        Constants.LOG.debug("SWAPPER useOn");
-
-        var itemStack = context.getItemInHand();
-        var customData = itemStack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        var customDataTag = customData.copyTag();
+        Constants.LOG.info("SWAPPER useOn");
 
         if (context.getPlayer().isCrouching()) {
-            if (Arrays.stream(BLACKLISTED_BLOCKS).anyMatch(context.getLevel().getBlockState(context.getClickedPos()).getBlock()::equals)) {
-                Constants.LOG.warn("SWAPPER target is blacklisted");
-                context.getPlayer().displayClientMessage(Component.literal("Not a swappable target"), false);
-                return InteractionResult.FAIL;
-            }
-
+            var itemStack = context.getItemInHand();
             var blockPos = context.getClickedPos();
-            var blockPosTag = NbtUtils.writeBlockPos(blockPos);
-            customDataTag.put("SwapperTargetPos", blockPosTag);
-            itemStack.set(DataComponents.CUSTOM_DATA, CustomData.of(customDataTag));
-
-            return InteractionResult.PASS;
-        } else {
-            Constants.LOG.warn("SWAPPER pos "
-                               + customDataTag
-                               + " "
-                               + context.getClickedPos().relative(context.getClickedFace(), 1));
-            if (customDataTag.contains("SwapperTargetPos")) {
-                BlockPos targetPos = NbtUtils.readBlockPos(customDataTag, "SwapperTargetPos").get();
-                BlockPos clickedPos = context.getClickedPos().relative(context.getClickedFace(), 1);
-                if (targetPos.equals(clickedPos)) {
-                    Constants.LOG.warn("SWAPPER target and swapper is at same position");
-                    context.getPlayer().displayClientMessage(Component.literal("Unable to place at target"), false);
-                    return InteractionResult.FAIL;
-                }
-            }
-
-            return super.useOn(context);
+            setTargetBlockPos(itemStack, blockPos);
+            return InteractionResult.PASS; //TODO maybe SUCCESS
         }
+
+        return super.useOn(context);
     }
 
     @Override
-    public void appendHoverText(ItemStack itemStack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        var customData = itemStack.get(DataComponents.CUSTOM_DATA);
-        var customDataTag = customData.copyTag();
-        if (customDataTag.contains("SwapperTargetPos")) {
-            BlockPos targetPos = NbtUtils.readBlockPos(customDataTag, "SwapperTargetPos").get();
-            tooltipComponents.add(Component.literal("Pos: " + targetPos));
+    public void appendHoverText(ItemStack itemStack,
+                                TooltipContext context,
+                                List<Component> tooltipComponents,
+                                TooltipFlag tooltipFlag) {
+        var targetBlockPos = getTargetBlockPos(itemStack);
+
+        if (targetBlockPos != null) {
+            tooltipComponents.add(Component.literal("Pos: " + targetBlockPos));
         }
 
         super.appendHoverText(itemStack, context, tooltipComponents, tooltipFlag);
+    }
+
+    private void setTargetBlockPos(ItemStack itemStack, BlockPos targetBlockPos) {
+        var customData = itemStack.getOrDefault(DataComponents.BLOCK_ENTITY_DATA, CustomData.EMPTY);
+        var customDataTag = customData.copyTag();
+
+        if (targetBlockPos == null) {
+            customDataTag.remove("SwapperTargetPos");
+        } else {
+            var targetBlockPosTag = NbtUtils.writeBlockPos(targetBlockPos);
+            customDataTag.put("SwapperTargetPos", targetBlockPosTag);
+        }
+
+        var blockEntityType = Services.get(RegistryService.class).getBlockEntityType("swapper");
+
+        BlockItem.setBlockEntityData(itemStack, blockEntityType, customDataTag);
+    }
+
+    private BlockPos getTargetBlockPos(ItemStack itemStack) {
+        var customData = itemStack.get(DataComponents.BLOCK_ENTITY_DATA);
+        if (customData == null) {
+            return null;
+        }
+
+        var customDataTag = customData.copyTag();
+
+        if (customDataTag.contains("SwapperTargetPos")) {
+            BlockPos targetBlockPos = NbtUtils.readBlockPos(customDataTag, "SwapperTargetPos").get();
+            return targetBlockPos;
+        } else {
+            return null;
+        }
     }
 
 }
