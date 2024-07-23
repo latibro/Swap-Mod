@@ -19,11 +19,12 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
+      - name: Copy files need for artifact
+        run: |
+          rsync -a --exclude='*-javadoc.jar' --exclude='*-sources.jar' fabric/build/libs/* ./artifact
+          rsync -a --exclude='*-javadoc.jar' --exclude='*-sources.jar' neoforge/build/libs/* ./artifact
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: |
-            fabric/build/libs/
-            neoforge/build/libs/
-            !*-javadoc.jar
-            !*-sources.jar
+          path: artifact
