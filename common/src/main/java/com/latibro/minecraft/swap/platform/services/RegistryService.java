@@ -19,4 +19,5 @@ public interface RegistryService {
     Item getItem(String name);
 
     BlockEntityType<?> getBlockEntityType(String name);
+    
 }

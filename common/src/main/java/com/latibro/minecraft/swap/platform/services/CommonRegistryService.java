@@ -50,4 +50,5 @@ public class CommonRegistryService implements RegistryService {
         BlockEntityType<?> blockEntityType = BuiltInRegistries.BLOCK_ENTITY_TYPE.get(createResourceLocation(name));
         return blockEntityType;
     }
+
 }

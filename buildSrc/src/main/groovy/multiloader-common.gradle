@@ -23,7 +23,9 @@ repositories {
                 url = 'https://repo.spongepowered.org/repository/maven-public'
             }
         }
-        filter { includeGroupAndSubgroups('org.spongepowered') }
+        filter {
+            includeGroupAndSubgroups('org.spongepowered')
+        }
     }
     exclusiveContent {
         forRepositories(
@@ -36,7 +38,9 @@ repositories {
                     url = 'https://maven.neoforged.net/releases'
                 }
         )
-        filter { includeGroup('org.parchmentmc.data') }
+        filter {
+            includeGroup('org.parchmentmc.data')
+        }
     }
     maven {
         name = 'BlameJared'
@@ -46,7 +50,7 @@ repositories {
 
 // Declare capabilities on the outgoing configurations.
 // Read more about capabilities here: https://docs.gradle.org/current/userguide/component_capabilities.html#sec:declaring-additional-capabilities-for-a-local-component
-['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each { variant ->
+['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each {variant ->
     configurations."$variant".outgoing {
         capability("$group:${base.archivesName.get()}:$version")
         capability("$group:$mod_id-${project.name}-${minecraft_version}:$version")
@@ -59,13 +63,17 @@ repositories {
 
 sourcesJar {
     from(rootProject.file('LICENSE')) {
-        rename { "${it}_${mod_name}" }
+        rename {
+            "${it}_${mod_name}"
+        }
     }
 }
 
 jar {
     from(rootProject.file('LICENSE')) {
-        rename { "${it}_${mod_name}" }
+        rename {
+            "${it}_${mod_name}"
+        }
     }
 
     manifest {
