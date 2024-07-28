@@ -1,18 +1,24 @@
 # Swap Mod
 
-The Block Swaping Block
+Minecraft mod that swaps blocks.
 
-Adds a block called "Swapper" that will swap one block to another when given at redstone pulse. The block swapped away will then be stored inside the swapper.
+Adds a block called "Swapper" that will swap two blocks when given at redstone pulse.
 
-This makes it possible to do things like small animations, where you have a stone block change to a dirt block and back again. Or you could create a door by swapping between a block and no block (air). Or make i fancy with swapping parts of your redsone circuit.
+This makes it possible to do things like small animations, where you have a stone block change to a dirt block and back again. Or you could create a doorway by swapping between a block and no block (air). You could also make it fancy by swapping parts of your redsone circuit.
 
-You select the target block by sneak right click on a block, before you place down the swapper. If you do not set the target before placing the swapper, the target will be the block above the swapper.
+The Swapper can be places on difference directions (like the piston), and will swap the block in front of the swapper with the block behind the swapper.
 
-https://www.curseforge.com/minecraft/mc-mods/swap
+## Future features
 
-Discord: https://discord.latibro.com
+- Remote targets : A way to use other swap targets then front and behind.
+- Internal storage : One target could be stored inside the swapper
 
-## Minecraft versions
+## Links
+
+* Curseforge: https://www.curseforge.com/minecraft/mc-mods/swap
+* Discord: https://discord.latibro.com
+
+## Supported Minecraft versions
 
 | Minecraft version | Fabric | Forge | NeoForge |
 | :---: | :---: | :---: | :---: |
