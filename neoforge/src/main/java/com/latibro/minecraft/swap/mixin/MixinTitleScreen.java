@@ -17,4 +17,5 @@ public class MixinTitleScreen {
         Constants.LOG.info("This line is printed by an swap mod mixin from NeoForge!");
         Constants.LOG.info("MC Version: {}", Minecraft.getInstance().getVersionType());
     }
+    
 }

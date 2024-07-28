@@ -16,4 +16,5 @@ public class MixinMinecraft {
         Constants.LOG.info("This line is printed by an swap mod common mixin!");
         Constants.LOG.info("MC Version: {}", Minecraft.getInstance().getVersionType());
     }
+
 }

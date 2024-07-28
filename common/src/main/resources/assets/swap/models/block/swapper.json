@@ -1,6 +1,12 @@
 {
-  "parent": "block/cube_all",
+  "parent": "minecraft:block/cube",
   "textures": {
-    "all": "swap:block/swapper"
+    "particle": "swap:block/swapper_base",
+    "down": "swap:block/swapper_base",
+    "up": "swap:block/swapper_base",
+    "north": "swap:block/swapper_front",
+    "east": "swap:block/swapper_base",
+    "south": "swap:block/swapper_target",
+    "west": "swap:block/swapper_base"
   }
 }
